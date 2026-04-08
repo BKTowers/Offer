@@ -3,83 +3,255 @@
 <head>
 <meta charset="UTF-8">
 <title>BKTowers</title>
-<link rel="stylesheet" href="style.css">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+    font-family: "Segoe UI";
+    direction: rtl;
+    background: #f8fafc;
+    margin: 0;
+}
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+.header {
+    background: #1e3a8a;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
 
-const firebaseConfig = {
-  apiKey: "AIza...",
-  authDomain: "offer-545cd.firebaseapp.com",
-  projectId: "offer-545cd"
-};
+.container {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    justify-content: center;
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+.box {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    width: 280px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
 
-window.saveDB = async (data)=> {
-  await setDoc(doc(db,"appData","main"), data);
-};
+h3 {
+    margin-bottom: 10px;
+}
 
-window.loadDB = async ()=> {
-  const snap = await getDoc(doc(db,"appData","main"));
-  return snap.exists()? snap.data(): null;
-};
-</script>
+input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
 
+button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: none;
+    border-radius: 6px;
+    background: #2563eb;
+    color: white;
+    cursor: pointer;
+}
+
+.item {
+    background: #f1f5f9;
+    padding: 6px;
+    margin-top: 6px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.small-btn {
+    padding: 3px 6px;
+    margin: 0 2px;
+    font-size: 12px;
+}
+
+.green { color: #16a34a; }
+.red { color: #dc2626; }
+
+.big {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.print {
+    background: #16a34a;
+}
+</style>
 </head>
 
 <body>
 
-<div class="sidebar">
-<h2>BKTowers</h2>
-<button onclick="location.href='dashboard.html'">Dashboard</button>
-<button onclick="location.href='reports.html'">التقارير</button>
+<div class="header">
+<h2>مكتب BKTowers - إدارة أملاك</h2>
 </div>
 
-<div class="main">
+<div class="container">
 
-<h1>لوحة التحكم</h1>
+<!-- Units -->
+<div class="box">
+<h3>الشقق</h3>
 
-<div class="card">
-<h3>إضافة شقة</h3>
 <input id="name" placeholder="اسم الشقة">
-<input id="price" type="number">
+<input id="price" type="number" placeholder="السعر">
+
 <select id="type">
 <option value="month">شهري</option>
 <option value="year">سنوي</option>
 <option value="day">يومي</option>
 </select>
+
 <button onclick="addUnit()">إضافة</button>
+
 <div id="unitsList"></div>
 </div>
 
-<div class="card">
+<!-- Expenses -->
+<div class="box">
 <h3>المصروفات</h3>
-<input id="expName">
-<input id="expPrice" type="number">
+
+<input id="expName" placeholder="اسم المصروف">
+<input id="expPrice" type="number" placeholder="القيمة">
+
 <button onclick="addExp()">إضافة</button>
+
 <div id="expList"></div>
 </div>
 
-<div class="card grid">
-<div>الإيراد: <span id="rev" class="big green"></span></div>
-<div>المصروفات: <span id="cost" class="big red"></span></div>
-<div>الربح: <span id="profit" class="big green"></span></div>
+<!-- Results -->
+<div class="box">
+<h3>النتائج</h3>
+
+<p>الإيراد: <span id="rev" class="big green">0</span></p>
+<p>المصروفات: <span id="cost" class="big red">0</span></p>
+<p>الربح: <span id="profit" class="big green">0</span></p>
+
+<input id="comm" type="number" placeholder="العمولة %">
+<label><input type="checkbox" id="use"> تفعيل العمولة</label>
+
+<p>العمولة: <span id="fee" class="big red">0</span></p>
+<p>بعد العمولة: <span id="after" class="big green">0</span></p>
+
+<button onclick="window.print()" class="print">طباعة</button>
+
 </div>
 
-<div class="card">
-<canvas id="chart"></canvas>
 </div>
 
-<button onclick="saveAll()">💾 حفظ</button>
+<script>
 
-</div>
+let units = [];
+let expenses = [];
 
-<script src="app.js"></script>
+function calcMonthly(price, type){
+    if(type === "year") return price / 12;
+    if(type === "day") return price * 30;
+    return price;
+}
+
+function addUnit(){
+    let name = document.getElementById("name").value;
+    let price = parseFloat(document.getElementById("price").value);
+    let type = document.getElementById("type").value;
+
+    if(!name || !price) return;
+
+    units.push({name, price, type});
+
+    document.getElementById("name").value = "";
+    document.getElementById("price").value = "";
+
+    render();
+}
+
+function addExp(){
+    let name = document.getElementById("expName").value;
+    let price = parseFloat(document.getElementById("expPrice").value);
+
+    if(!name || !price) return;
+
+    expenses.push({name, price});
+
+    document.getElementById("expName").value = "";
+    document.getElementById("expPrice").value = "";
+
+    render();
+}
+
+function render(){
+
+    // Units
+    document.getElementById("unitsList").innerHTML =
+    units.map((u,i)=>`
+    <div class="item">
+        ${u.name} - ${u.price}
+        <div>
+            <button class="small-btn" onclick="editUnit(${i})">✏</button>
+            <button class="small-btn" onclick="deleteUnit(${i})">❌</button>
+        </div>
+    </div>`).join("");
+
+    // Expenses
+    document.getElementById("expList").innerHTML =
+    expenses.map((e,i)=>`
+    <div class="item">
+        ${e.name} - ${e.price}
+        <div>
+            <button class="small-btn" onclick="editExp(${i})">✏</button>
+            <button class="small-btn" onclick="deleteExp(${i})">❌</button>
+        </div>
+    </div>`).join("");
+
+    let revenue = units.reduce((sum,u)=>sum + calcMonthly(u.price,u.type),0);
+    let cost = expenses.reduce((sum,e)=>sum + e.price,0);
+    let profit = revenue - cost;
+
+    let percent = parseFloat(document.getElementById("comm").value) || 0;
+    let use = document.getElementById("use").checked;
+
+    let fee = use ? revenue * percent / 100 : 0;
+    let after = profit - fee;
+
+    document.getElementById("rev").innerText = revenue;
+    document.getElementById("cost").innerText = cost;
+    document.getElementById("profit").innerText = profit;
+    document.getElementById("fee").innerText = fee;
+    document.getElementById("after").innerText = after;
+}
+
+function editUnit(i){
+    document.getElementById("name").value = units[i].name;
+    document.getElementById("price").value = units[i].price;
+    document.getElementById("type").value = units[i].type;
+    units.splice(i,1);
+    render();
+}
+
+function deleteUnit(i){
+    units.splice(i,1);
+    render();
+}
+
+function editExp(i){
+    document.getElementById("expName").value = expenses[i].name;
+    document.getElementById("expPrice").value = expenses[i].price;
+    expenses.splice(i,1);
+    render();
+}
+
+function deleteExp(i){
+    expenses.splice(i,1);
+    render();
+}
+
+</script>
 
 </body>
 </html>
