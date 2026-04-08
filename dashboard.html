@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <title>BKTowers</title>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDMO25n17Bix8N7WiOZM3TqbHUp9E5pdpg",
+  apiKey: "AIza...",
   authDomain: "offer-545cd.firebaseapp.com",
-  projectId: "offer-545cd",
-  storageBucket: "offer-545cd.firebasestorage.app",
-  messagingSenderId: "96672079807",
-  appId: "1:96672079807:web:83ae8bee211d196e128b0a"
+  projectId: "offer-545cd"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -30,270 +30,56 @@ window.loadDB = async ()=> {
 };
 </script>
 
-<style>
-body {
-    font-family: "Segoe UI", Tahoma;
-    direction: rtl;
-    background: #f1f5f9;
-    margin:0;
-}
-
-.header {
-    background:#1e3a8a;
-    color:white;
-    padding:20px;
-    text-align:center;
-}
-
-.container {
-    display:grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap:15px;
-    padding:15px;
-}
-
-.card {
-    background:white;
-    border-radius:12px;
-    padding:15px;
-    box-shadow:0 4px 10px rgba(0,0,0,0.05);
-}
-
-h2 {
-    margin-bottom:10px;
-    font-size:20px;
-}
-
-input,select {
-    width:100%;
-    padding:10px;
-    margin:5px 0;
-    border-radius:6px;
-    border:1px solid #ddd;
-}
-
-button {
-    padding:8px 10px;
-    margin:3px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    font-size:14px;
-}
-
-.blue {background:#2563eb;color:white;}
-.red {background:#dc2626;color:white;}
-.gray {background:#64748b;color:white;}
-
-.item {
-    background:#f8fafc;
-    padding:8px;
-    margin:5px 0;
-    border-radius:6px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.big {
-    font-size:22px;
-    font-weight:bold;
-}
-
-.green {color:#16a34a;}
-.red-text {color:#dc2626;}
-
-.results div {
-    margin:8px 0;
-}
-
-.print {
-    width:100%;
-    background:#16a34a;
-    color:white;
-    padding:10px;
-}
-</style>
 </head>
 
 <body>
 
-<div class="header">
-<h1>مكتب BKTowers</h1>
-<h3>نظام إدارة الأملاك</h3>
+<div class="sidebar">
+<h2>BKTowers</h2>
+<button onclick="location.href='dashboard.html'">Dashboard</button>
+<button onclick="location.href='reports.html'">التقارير</button>
 </div>
 
-<div class="container">
+<div class="main">
 
-<!-- Units -->
+<h1>لوحة التحكم</h1>
+
 <div class="card">
-<h2>الشقق</h2>
-
+<h3>إضافة شقة</h3>
 <input id="name" placeholder="اسم الشقة">
-<input id="price" type="number" placeholder="السعر">
-
+<input id="price" type="number">
 <select id="type">
 <option value="month">شهري</option>
 <option value="year">سنوي</option>
 <option value="day">يومي</option>
 </select>
-
-<button class="blue" onclick="addUnit()">إضافة</button>
-
+<button onclick="addUnit()">إضافة</button>
 <div id="unitsList"></div>
 </div>
 
-<!-- Expenses -->
 <div class="card">
-<h2>المصروفات</h2>
-
-<input id="expName" placeholder="اسم المصروف">
-<input id="expPrice" type="number" placeholder="القيمة">
-
-<button class="blue" onclick="addExp()">إضافة</button>
-
+<h3>المصروفات</h3>
+<input id="expName">
+<input id="expPrice" type="number">
+<button onclick="addExp()">إضافة</button>
 <div id="expList"></div>
 </div>
 
-<!-- Results -->
+<div class="card grid">
+<div>الإيراد: <span id="rev" class="big green"></span></div>
+<div>المصروفات: <span id="cost" class="big red"></span></div>
+<div>الربح: <span id="profit" class="big green"></span></div>
+</div>
+
 <div class="card">
-<h2>النتائج</h2>
-
-<div class="results">
-<div>الإيراد: <span class="big green" id="rev"></span></div>
-<div>المصروفات: <span class="big red-text" id="cost"></span></div>
-<div>الربح: <span class="big green" id="profit"></span></div>
-<div>العمولة: <span class="big red-text" id="fee"></span></div>
-<div>بعد العمولة: <span class="big green" id="after"></span></div>
+<canvas id="chart"></canvas>
 </div>
 
-<input id="comm" type="number" placeholder="نسبة العمولة %">
-<label><input type="checkbox" id="use"> تفعيل العمولة</label>
-
-<button class="blue" onclick="saveAll()">💾 حفظ</button>
-<button class="print" onclick="window.print()">🖨 طباعة</button>
+<button onclick="saveAll()">💾 حفظ</button>
 
 </div>
 
-</div>
-
-<script>
-
-let units=[], exps=[];
-
-function calcMonthly(p,t){
-    if(t==="year") return p/12;
-    if(t==="day") return p*30;
-    return p;
-}
-
-function addUnit(){
-    if(!name.value || !price.value) return;
-
-    units.push({
-        n:name.value,
-        p:+price.value,
-        t:type.value
-    });
-
-    name.value="";
-    price.value="";
-    render();
-}
-
-function addExp(){
-    if(!expName.value || !expPrice.value) return;
-
-    exps.push({
-        n:expName.value,
-        p:+expPrice.value
-    });
-
-    expName.value="";
-    expPrice.value="";
-    render();
-}
-
-function render(){
-
-    // Units
-    unitsList.innerHTML = units.map((u,i)=>`
-    <div class="item">
-        <span>${u.n} - ${u.p}</span>
-        <div>
-            <button class="gray" onclick="editUnit(${i})">✏</button>
-            <button class="red" onclick="delUnit(${i})">✕</button>
-        </div>
-    </div>`).join("");
-
-    // Expenses
-    expList.innerHTML = exps.map((e,i)=>`
-    <div class="item">
-        <span>${e.n} - ${e.p}</span>
-        <div>
-            <button class="gray" onclick="editExp(${i})">✏</button>
-            <button class="red" onclick="delExp(${i})">✕</button>
-        </div>
-    </div>`).join("");
-
-    let revenue = units.reduce((a,u)=>a+calcMonthly(u.p,u.t),0);
-    let cost = exps.reduce((a,e)=>a+e.p,0);
-    let profit = revenue - cost;
-
-    let percent = +comm.value || 0;
-    let fee = use.checked ? revenue*percent/100 : 0;
-    let after = profit - fee;
-
-    rev.innerText = revenue+" ريال";
-    costEl.innerText = cost+" ريال";
-    profitEl.innerText = profit+" ريال";
-    feeEl.innerText = fee+" ريال";
-    afterEl.innerText = after+" ريال";
-}
-
-function editUnit(i){
-    name.value = units[i].n;
-    price.value = units[i].p;
-    type.value = units[i].t;
-    units.splice(i,1);
-}
-
-function delUnit(i){
-    units.splice(i,1);
-    render();
-}
-
-function editExp(i){
-    expName.value = exps[i].n;
-    expPrice.value = exps[i].p;
-    exps.splice(i,1);
-}
-
-function delExp(i){
-    exps.splice(i,1);
-    render();
-}
-
-async function saveAll(){
-    await window.saveDB({units,exps,comm:comm.value,use:use.checked});
-    alert("تم الحفظ");
-}
-
-async function loadAll(){
-    let d = await window.loadDB();
-    if(!d) return;
-
-    units = d.units || [];
-    exps = d.exps || [];
-    comm.value = d.comm || "";
-    use.checked = d.use || false;
-
-    render();
-}
-
-loadAll();
-
-</script>
+<script src="app.js"></script>
 
 </body>
 </html>
