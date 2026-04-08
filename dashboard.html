@@ -16,10 +16,7 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 .add{background:#2563eb;color:white;}
 .del{background:#dc2626;color:white;}
 .edit{background:#64748b;color:white;}
-.screen-only{display:block;}
-@media print{
-    button,input,select{display:none;}
-}
+@media print{button,input,select{display:none;}}
 </style>
 </head>
 
@@ -28,24 +25,20 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 <div class="header">
 <h2>مكتب BKTowers</h2>
 <h3>عرض إدارة أملاك</h3>
-
 <p id="dateNow"></p>
-
-<!-- اسم العميل -->
-<p id="clientText" style="font-size:16px;font-weight:bold;"></p>
-
+<p id="clientText" style="font-weight:bold;"></p>
 </div>
 
 <div class="container">
 
 <h3>عرض مقدم لـ:</h3>
-<input id="clientName" placeholder="اسم المالك / الفندق" oninput="updateClientName()">
+<input id="clientName" placeholder="اسم المالك / الفندق" oninput="updateClient()">
 
 <h3>إضافة شقة</h3>
 <input id="unitNo" placeholder="رقم الشقة">
 <input id="desc" placeholder="الوصف">
 
-<select id="statusSelect" onchange="togglePrice()">
+<select id="statusSelect" onchange="togglePriceField()">
 <option value="occupied">مؤجرة</option>
 <option value="empty">متاحة</option>
 </select>
@@ -80,7 +73,7 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 
 <table class="report-table">
 <tbody>
-<tr><td>الإيراد</td><td id="rev">0</td></tr>
+<tr><td>الإيراد الشهري</td><td id="rev">0</td></tr>
 <tr><td>المصروفات</td><td id="cost">0</td></tr>
 <tr><td>الربح</td><td id="profit">0</td></tr>
 <tr><td>نسبة الإشغال</td><td id="occupancy">0%</td></tr>
@@ -99,29 +92,23 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 <input id="commission" type="number" placeholder="العمولة %" oninput="render()">
 <label><input type="checkbox" id="useCommission" onchange="render()"> تفعيل العمولة</label>
 
-<br><br>
-<button onclick="window.print()">🖨 طباعة</button>
-
 </div>
 
 <script>
 
-// التاريخ
-document.getElementById("dateNow").innerText =
-"التاريخ: " + new Date().toLocaleDateString('ar-EG');
-
-// اسم العميل
-function updateClientName(){
-    const name = document.getElementById("clientName").value;
-    document.getElementById("clientText").innerText =
-        name ? "عرض مقدم إلى: " + name : "";
-}
-
 let units = [];
 let expenses = [];
 
-// التحكم في السعر
-function togglePrice(){
+document.getElementById("dateNow").innerText =
+"التاريخ: " + new Date().toLocaleDateString('ar-EG');
+
+function updateClient(){
+    const name = document.getElementById("clientName").value;
+    document.getElementById("clientText").innerText =
+    name ? "عرض مقدم إلى: " + name : "";
+}
+
+function togglePriceField(){
     const status = document.getElementById("statusSelect").value;
     const priceInput = document.getElementById("priceInput");
 
@@ -133,7 +120,6 @@ function togglePrice(){
     }
 }
 
-// إضافة شقة
 function addUnit(){
     const no = document.getElementById("unitNo").value;
     const desc = document.getElementById("desc").value;
@@ -151,7 +137,6 @@ function addUnit(){
     render();
 }
 
-// إضافة مصروف
 function addExpense(){
     const name = document.getElementById("expName").value;
     const price = Number(document.getElementById("expPrice").value);
@@ -166,7 +151,6 @@ function addExpense(){
     render();
 }
 
-// الحساب
 function render(){
 
     document.getElementById("unitsTable").innerHTML =
@@ -176,18 +160,27 @@ function render(){
         <td>${u.desc}</td>
         <td>${u.status==="occupied"?"مؤجرة":"متاحة"}</td>
         <td>${u.status==="occupied"?u.price:"-"}</td>
-        <td><button onclick="deleteUnit(${i})">❌</button></td>
+        <td>
+            <button class="edit" onclick="editUnit(${i})">تعديل</button>
+            <button class="del" onclick="deleteUnit(${i})">حذف</button>
+        </td>
     </tr>`).join("");
 
     document.getElementById("expTable").innerHTML =
-    expenses.map(e=>`
-    <tr><td>${e.name}</td><td>${e.price}</td></tr>
-    `).join("");
+    expenses.map((e,i)=>`
+    <tr>
+        <td>${e.name}</td>
+        <td>${e.price}</td>
+        <td>
+            <button class="edit" onclick="editExp(${i})">تعديل</button>
+            <button class="del" onclick="deleteExp(${i})">حذف</button>
+        </td>
+    </tr>`).join("");
 
     const occupied = units.filter(u=>u.status==="occupied");
 
-    const revenue = occupied.reduce((s,u)=>s+u.price,0);
-    const cost = expenses.reduce((s,e)=>s+e.price,0);
+    const revenue = occupied.reduce((sum,u)=>sum+u.price,0);
+    const cost = expenses.reduce((sum,e)=>sum+e.price,0);
     const profit = revenue - cost;
 
     const occupancy = units.length ? ((occupied.length/units.length)*100).toFixed(1):0;
@@ -203,21 +196,44 @@ function render(){
         after = profit - fee;
         feeRow.style.display="";
         afterRow.style.display="";
-    } else {
+    }else{
         feeRow.style.display="none";
         afterRow.style.display="none";
     }
 
-    rev.innerText = revenue;
-    cost.innerText = cost;
-    profit.innerText = profit;
-    occupancy.innerText = occupancy + "%";
-    fee.innerText = fee;
-    after.innerText = after;
+    document.getElementById("rev").innerText = revenue;
+    document.getElementById("cost").innerText = cost;
+    document.getElementById("profit").innerText = profit;
+    document.getElementById("occupancy").innerText = occupancy+"%";
+    document.getElementById("fee").innerText = fee;
+    document.getElementById("after").innerText = after;
+}
+
+function editUnit(i){
+    const u = units[i];
+    document.getElementById("unitNo").value = u.no;
+    document.getElementById("desc").value = u.desc;
+    document.getElementById("statusSelect").value = u.status;
+    document.getElementById("priceInput").value = u.price;
+    units.splice(i,1);
+    render();
 }
 
 function deleteUnit(i){
     units.splice(i,1);
+    render();
+}
+
+function editExp(i){
+    const e = expenses[i];
+    document.getElementById("expName").value = e.name;
+    document.getElementById("expPrice").value = e.price;
+    expenses.splice(i,1);
+    render();
+}
+
+function deleteExp(i){
+    expenses.splice(i,1);
     render();
 }
 
