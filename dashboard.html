@@ -5,44 +5,204 @@
 <title>BKTowers</title>
 
 <style>
-body {
-    font-family: "Segoe UI";
-    direction: rtl;
-    background: #f8fafc;
-    margin: 0;
+body {font-family:Segoe UI;direction:rtl;background:#f8fafc;margin:0;}
+.header {background:#1e3a8a;color:white;padding:20px;text-align:center;}
+.container {padding:20px;max-width:1100px;margin:auto;}
+.report-table {width:100%;border-collapse:collapse;margin-top:10px;}
+.report-table th,.report-table td {border:2px solid #444;padding:10px;text-align:center;}
+.report-table th {background:#d1d5db;}
+input,select {padding:8px;margin:5px;}
+button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
+.add{background:#2563eb;color:white;}
+.del{background:#dc2626;color:white;}
+.edit{background:#64748b;color:white;}
+@media print{button,input,select{display:none;}}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h2>مكتب BKTowers</h2>
+<h3>عرض إدارة أملاك</h3>
+<p id="dateNow"></p>
+</div>
+
+<div class="container">
+
+<h3>إضافة شقة</h3>
+<input id="unitNo" placeholder="رقم الشقة">
+<input id="desc" placeholder="الوصف">
+
+<select id="statusSelect" onchange="togglePriceField()">
+<option value="occupied">مؤجرة</option>
+<option value="empty">متاحة</option>
+</select>
+
+<input id="priceInput" type="number" placeholder="السعر">
+
+<button class="add" onclick="addUnit()">إضافة</button>
+
+<table class="report-table">
+<thead>
+<tr>
+<th>رقم الشقة</th>
+<th>الوصف</th>
+<th>الحالة</th>
+<th>السعر</th>
+<th>تحكم</th>
+</tr>
+</thead>
+<tbody id="unitsTable"></tbody>
+</table>
+
+<h3>المصروفات</h3>
+<input id="expName" placeholder="النوع">
+<input id="expPrice" type="number" placeholder="المبلغ">
+<button class="add" onclick="addExpense()">إضافة</button>
+
+<table class="report-table">
+<tbody id="expTable"></tbody>
+</table>
+
+<h3>النتائج</h3>
+
+<table class="report-table">
+<tbody>
+<tr><td>الإيراد الشهري</td><td id="rev">0</td></tr>
+<tr><td>الإيراد السنوي</td><td id="yearly">0</td></tr>
+<tr><td>المصروفات</td><td id="cost">0</td></tr>
+<tr><td>الربح</td><td id="profit">0</td></tr>
+<tr><td>نسبة الإشغال</td><td id="occupancy">0%</td></tr>
+
+<tr id="feeRow" style="display:none;">
+<td>العمولة</td><td id="fee">0</td>
+</tr>
+
+<tr id="afterRow" style="display:none;">
+<td>بعد العمولة</td><td id="after">0</td>
+</tr>
+
+</tbody>
+</table>
+
+<input id="commission" type="number" placeholder="العمولة %" oninput="render()">
+<label><input type="checkbox" id="useCommission" onchange="render()"> تفعيل العمولة</label>
+
+</div>
+
+<script>
+
+let units = [];
+let expenses = [];
+
+document.getElementById("dateNow").innerText =
+"التاريخ: " + new Date().toLocaleDateString('ar-EG');
+
+function togglePriceField(){
+    const status = document.getElementById("statusSelect").value;
+    const priceInput = document.getElementById("priceInput");
+
+    if(status === "empty"){
+        priceInput.disabled = true;
+        priceInput.value = "";
+    } else {
+        priceInput.disabled = false;
+    }
 }
 
-.header {
-    background: #1e3a8a;
-    color: white;
-    padding: 20px;
-    text-align: center;
+function addUnit(){
+    const no = document.getElementById("unitNo").value;
+    const desc = document.getElementById("desc").value;
+    const status = document.getElementById("statusSelect").value;
+    const price = Number(document.getElementById("priceInput").value) || 0;
+
+    if(!no || !desc) return;
+
+    units.push({no,desc,status,price});
+
+    document.getElementById("unitNo").value="";
+    document.getElementById("desc").value="";
+    document.getElementById("priceInput").value="";
+
+    render();
 }
 
-.container {
-    padding: 20px;
-    max-width: 1100px;
-    margin: auto;
+function addExpense(){
+    const name = document.getElementById("expName").value;
+    const price = Number(document.getElementById("expPrice").value);
+
+    if(!name || !price) return;
+
+    expenses.push({name,price});
+
+    document.getElementById("expName").value="";
+    document.getElementById("expPrice").value="";
+
+    render();
 }
 
-.report-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
+function render(){
+
+    document.getElementById("unitsTable").innerHTML =
+    units.map((u,i)=>`
+    <tr>
+        <td>${u.no}</td>
+        <td>${u.desc}</td>
+        <td>${u.status==="occupied"?"مؤجرة":"متاحة"}</td>
+        <td>${u.status==="occupied"?u.price:"-"}</td>
+        <td>
+            <button onclick="deleteUnit(${i})">❌</button>
+        </td>
+    </tr>`).join("");
+
+    document.getElementById("expTable").innerHTML =
+    expenses.map(e=>`
+    <tr>
+        <td>${e.name}</td>
+        <td>${e.price}</td>
+    </tr>`).join("");
+
+    const occupied = units.filter(u=>u.status==="occupied");
+
+    const revenue = occupied.reduce((sum,u)=>sum+u.price,0);
+    const yearly = revenue * 12;
+    const cost = expenses.reduce((sum,e)=>sum+e.price,0);
+    const profit = revenue - cost;
+
+    const occupancy = units.length ? ((occupied.length/units.length)*100).toFixed(1):0;
+
+    const percent = Number(document.getElementById("commission").value) || 0;
+    const use = document.getElementById("useCommission").checked;
+
+    let fee = 0;
+    let after = profit;
+
+    if(use && percent>0){
+        fee = revenue * percent/100;
+        after = profit - fee;
+        document.getElementById("feeRow").style.display="";
+        document.getElementById("afterRow").style.display="";
+    }else{
+        document.getElementById("feeRow").style.display="none";
+        document.getElementById("afterRow").style.display="none";
+    }
+
+    document.getElementById("rev").innerText = revenue;
+    document.getElementById("yearly").innerText = yearly;
+    document.getElementById("cost").innerText = cost;
+    document.getElementById("profit").innerText = profit;
+    document.getElementById("occupancy").innerText = occupancy+"%";
+    document.getElementById("fee").innerText = fee;
+    document.getElementById("after").innerText = after;
 }
 
-.report-table th,
-.report-table td {
-    border: 2px solid #444;
-    padding: 10px;
-    text-align: center;
+function deleteUnit(i){
+    units.splice(i,1);
+    render();
 }
 
-.report-table th {
-    background: #d1d5db;
-}
+</script>
 
-input, select {
-    padding: 8px;
-    margin: 5px;
-}
+</body>
+</html>
