@@ -70,7 +70,6 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 <table class="report-table">
 <tbody>
 <tr><td>الإيراد الشهري</td><td id="rev">0</td></tr>
-<tr><td>الإيراد السنوي</td><td id="yearly">0</td></tr>
 <tr><td>المصروفات</td><td id="cost">0</td></tr>
 <tr><td>الربح</td><td id="profit">0</td></tr>
 <tr><td>نسبة الإشغال</td><td id="occupancy">0%</td></tr>
@@ -166,7 +165,6 @@ function render(){
     const occupied = units.filter(u=>u.status==="occupied");
 
     const revenue = occupied.reduce((sum,u)=>sum+u.price,0);
-    const yearly = revenue * 12;
     const cost = expenses.reduce((sum,e)=>sum+e.price,0);
     const profit = revenue - cost;
 
@@ -189,7 +187,6 @@ function render(){
     }
 
     document.getElementById("rev").innerText = revenue;
-    document.getElementById("yearly").innerText = yearly;
     document.getElementById("cost").innerText = cost;
     document.getElementById("profit").innerText = profit;
     document.getElementById("occupancy").innerText = occupancy+"%";
