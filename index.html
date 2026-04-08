@@ -1,1 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>BKTowers</title>
 
+<style>
+body {
+    font-family: Arial;
+    direction: rtl;
+    background: linear-gradient(135deg, #2563EB, #1E3A8A);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.box {
+    text-align: center;
+}
+
+h1 { font-size: 40px; margin-bottom: 10px; }
+h2 { margin-bottom: 30px; }
+
+button {
+    padding: 15px 40px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    background: white;
+    color: #2563EB;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h1>عرض إدارة أملاك</h1>
+<h2>مكتب BKTowers</h2>
+
+<button onclick="go()">دخول</button>
+</div>
+
+<script>
+function go(){
+    window.location.href = "dashboard.html";
+}
+</script>
+
+</body>
+</html>
