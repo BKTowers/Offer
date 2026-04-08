@@ -1,1 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>BKTowers</title>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMO25n17Bix8N7WiOZM3TqbHUp9E5pdpg",
+  authDomain: "offer-545cd.firebaseapp.com",
+  projectId: "offer-545cd",
+  storageBucket: "offer-545cd.firebasestorage.app",
+  messagingSenderId: "96672079807",
+  appId: "1:96672079807:web:83ae8bee211d196e128b0a"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.saveDB = async (data)=> {
+  await setDoc(doc(db,"appData","main"), data);
+};
+
+window.loadDB = async ()=> {
+  const snap = await getDoc(doc(db,"appData","main"));
+  return snap.exists()? snap.data(): null;
+};
+</script>
+
+<style>
+body { font-family: Arial; direction: rtl; background:#f5f7fa; padding:20px;}
+.container { max-width:1100px; margin:auto;}
+.card { background:white; padding:15px; margin:10px 0; border-radius:10px;}
+input,select { width:100%; padding:8px; margin:5px 0;}
+button { padding:8px; margin:3px; border:none; border-radius:6px; cursor:pointer;}
+.blue { background:#2563EB; color:white;}
+.red { background:#DC2626; color:white;}
+.green { color:#16A34A; font-weight:bold;}
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>مكتب BKTowers</h1>
+<h3>إدارة أملاك</h3>
+
+<!-- Units -->
+<div class="card">
+<h2>الشقق</h2>
+<input id="name" placeholder="اسم">
+<input id="price" type="number" placeholder="السعر">
+<select id="type">
+<option value="month">شهري</option>
+<option value="year">سنوي</option>
+<option value="day">يومي</option>
+</select>
+<button class="blue" onclick="addUnit()">إضافة</button>
+<div id="units"></div>
+</div>
+
+<!-- Expenses -->
+<div class="card">
+<h2>المصروفات</h2>
+<input id="expName" placeholder="اسم">
+<input id="expPrice" type="number" placeholder="السعر">
+<button class="blue" onclick="addExp()">إضافة</button>
+<div id="exps"></div>
+</div>
+
+<!-- Salaries -->
+<div class="card">
+<h2>الرواتب</h2>
+<input id="job" placeholder="وظيفة">
+<input id="sal" type="number" placeholder="راتب">
+<button class="blue" onclick="addSal()">إضافة</button>
+<div id="sals"></div>
+</div>
+
+<!-- Commission -->
+<div class="card">
+<h2>العمولة</h2>
+<input id="comm" type="number" placeholder="مثلاً 20">
+<label><input type="checkbox" id="use"> تفعيل</label>
+</div>
+
+<!-- Results -->
+<div class="card">
+<h2>النتائج</h2>
+
+<div class="grid">
+<div><p>الإيراد</p><div class="green" id="rev"></div></div>
+<div><p>المصروفات</p><div class="red" id="cost"></div></div>
+<div><p>الربح</p><div class="green" id="profit"></div></div>
+</div>
+
+<div class="grid">
+<div><p>العمولة</p><div class="red" id="fee"></div></div>
+<div><p>بعد العمولة</p><div class="green" id="after"></div></div>
+</div>
+
+<button class="blue" onclick="saveAll()">💾 حفظ</button>
+<button class="green" onclick="window.print()">🖨 طباعة</button>
+
+</div>
+
+</div>
+
+<script>
+
+let units=[], exps=[], sals=[];
+
+function addUnit(){
+  units.push({
+    n:name.value,
+    p:+price.value,
+    t:type.value
+  });
+  render();
+}
+
+function addExp(){
+  exps.push({n:expName.value,p:+expPrice.value});
+  render();
+}
+
+function addSal(){
+  sals.push({n:job.value,p:+sal.value});
+  render();
+}
+
+function calcMonthly(p,t){
+  if(t==="year") return p/12;
+  if(t==="day") return p*30;
+  return p;
+}
+
+function render(){
+
+  unitsDiv.innerHTML = units.map((u,i)=>`
+  <div>
+  ${u.n} - ${u.p}
+  <button onclick="editUnit(${i})">✏</button>
+  <button onclick="delUnit(${i})">❌</button>
+  </div>`).join("");
+
+  expsDiv.innerHTML = exps.map((e,i)=>`
+  <div>
+  ${e.n} - ${e.p}
+  <button onclick="editExp(${i})">✏</button>
+  <button onclick="delExp(${i})">❌</button>
+  </div>`).join("");
+
+  salsDiv.innerHTML = sals.map((s,i)=>`
+  <div>
+  ${s.n} - ${s.p}
+  <button onclick="editSal(${i})">✏</button>
+  <button onclick="delSal(${i})">❌</button>
+  </div>`).join("");
+
+  let revenue = units.reduce((a,u)=>a+calcMonthly(u.p,u.t),0);
+  let cost = exps.reduce((a,e)=>a+e.p,0)+sals.reduce((a,s)=>a+s.p,0);
+  let profit = revenue - cost;
+
+  let percent = +comm.value || 0;
+  let fee = use.checked ? revenue*percent/100 : 0;
+  let after = profit - fee;
+
+  rev.innerText = revenue+" ريال";
+  costEl.innerText = cost+" ريال";
+  profitEl.innerText = profit+" ريال";
+  feeEl.innerText = fee+" ريال";
+  afterEl.innerText = after+" ريال";
+}
+
+// Edit/Delete
+function editUnit(i){
+  name.value=units[i].n;
+  price.value=units[i].p;
+  type.value=units[i].t;
+  units.splice(i,1);
+}
+
+function delUnit(i){ units.splice(i,1); render(); }
+
+function editExp(i){
+  expName.value=exps[i].n;
+  expPrice.value=exps[i].p;
+  exps.splice(i,1);
+}
+
+function delExp(i){ exps.splice(i,1); render(); }
+
+function editSal(i){
+  job.value=sals[i].n;
+  sal.value=sals[i].p;
+  sals.splice(i,1);
+}
+
+function delSal(i){ sals.splice(i,1); render(); }
+
+// Firebase
+async function saveAll(){
+  await window.saveDB({units,exps,sals,comm:comm.value,use:use.checked});
+  alert("تم الحفظ");
+}
+
+async function loadAll(){
+  let d = await window.loadDB();
+  if(!d) return;
+  units=d.units||[];
+  exps=d.exps||[];
+  sals=d.sals||[];
+  comm.value=d.comm||"";
+  use.checked=d.use||false;
+  render();
+}
+
+loadAll();
+
+</script>
+
+</body>
+</html>
