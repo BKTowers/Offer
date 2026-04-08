@@ -15,7 +15,7 @@ body {
 .header {
     background: #1e3a8a;
     color: white;
-    padding: 15px;
+    padding: 20px;
     text-align: center;
 }
 
@@ -25,7 +25,20 @@ body {
     margin: auto;
 }
 
-/* ===== TABLE STYLE (زي الصورة) ===== */
+/* info */
+.info {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.info input {
+    padding: 8px;
+    width: 300px;
+}
+
+/* tables */
 .report-table {
     width: 100%;
     border-collapse: collapse;
@@ -37,16 +50,10 @@ body {
     border: 2px solid #444;
     padding: 10px;
     text-align: center;
-    font-size: 15px;
 }
 
 .report-table th {
     background: #d1d5db;
-    font-weight: bold;
-}
-
-.report-table td {
-    background: #f9fafb;
 }
 
 /* inputs */
@@ -67,17 +74,9 @@ button {
 .del { background: #dc2626; color: white; }
 .edit { background: #64748b; color: white; }
 
-/* results */
-.results {
+.section-title {
     margin-top: 20px;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
 }
-
-.big { font-size: 18px; font-weight: bold; }
-.green { color: #16a34a; }
-.red { color: #dc2626; }
 
 /* print */
 @media print {
@@ -94,19 +93,25 @@ button {
 <body>
 
 <div class="header">
-<h2>مكتب BKTowers - إدارة أملاك</h2>
+<h2>مكتب BKTowers</h2>
+<h3>عرض إدارة أملاك</h3>
 </div>
 
 <div class="container">
 
+<!-- CLIENT -->
+<div class="info">
+<h3>عرض مقدم لـ:</h3>
+<input id="clientName" placeholder="اسم المالك / الفندق">
+</div>
+
 <!-- ADD UNIT -->
-<h3>إضافة شقة</h3>
+<h3 class="section-title">إضافة شقة</h3>
 <input id="unitNo" placeholder="رقم الشقة">
 <input id="price" type="number" placeholder="السعر">
-<input id="desc" placeholder="الوصف (غرفة وصالة)">
+<input id="desc" placeholder="الوصف">
 <button class="add" onclick="addUnit()">إضافة</button>
 
-<!-- UNITS TABLE -->
 <table class="report-table">
 <thead>
 <tr>
@@ -120,7 +125,7 @@ button {
 </table>
 
 <!-- EXPENSES -->
-<h3>المصروفات</h3>
+<h3 class="section-title">المصروفات</h3>
 <input id="expName" placeholder="النوع">
 <input id="expPrice" type="number" placeholder="المبلغ">
 <button class="add" onclick="addExp()">إضافة</button>
@@ -137,21 +142,32 @@ button {
 </table>
 
 <!-- RESULTS -->
-<div class="results">
-<h3>النتائج</h3>
+<h3 class="section-title">النتائج</h3>
 
-<p>الإيراد: <span id="rev" class="big green">0</span></p>
-<p>المصروفات: <span id="cost" class="big red">0</span></p>
-<p>الربح قبل العمولة: <span id="profit" class="big green">0</span></p>
+<table class="report-table">
+<thead>
+<tr>
+<th>البند</th>
+<th>القيمة</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>الإيراد</td><td id="rev">0</td></tr>
+<tr><td>المصروفات</td><td id="costValue">0</td></tr>
+<tr><td>الربح قبل العمولة</td><td id="profitValue">0</td></tr>
+<tr><td>العمولة</td><td id="feeValue">0</td></tr>
+<tr><td>الربح بعد العمولة</td><td id="afterValue">0</td></tr>
+</tbody>
+</table>
 
-<input id="comm" type="number" placeholder="العمولة %" oninput="render()">
+<!-- COMMISSION -->
+<div style="margin-top:10px;">
+<input id="comm" type="number" placeholder="نسبة العمولة %" oninput="render()">
 <label><input type="checkbox" id="use" onchange="render()"> تفعيل العمولة</label>
-
-<p>العمولة: <span id="fee" class="big red">0</span></p>
-<p>الربح بعد العمولة: <span id="after" class="big green">0</span></p>
-
-<button onclick="window.print()">🖨 طباعة</button>
 </div>
+
+<br>
+<button onclick="window.print()">🖨 طباعة</button>
 
 </div>
 
@@ -163,12 +179,12 @@ let expenses = [];
 // ADD UNIT
 function addUnit(){
     let no = unitNo.value;
-    let priceVal = Number(price.value);
-    let descVal = desc.value;
+    let p = Number(price.value);
+    let d = desc.value;
 
-    if(!no || !priceVal || !descVal) return;
+    if(!no || !p || !d) return;
 
-    units.push({no, price: priceVal, desc: descVal});
+    units.push({no,p,d});
 
     unitNo.value="";
     price.value="";
@@ -195,19 +211,19 @@ function addExp(){
 // RENDER
 function render(){
 
-    // units table
+    // units
     unitsTable.innerHTML = units.map((u,i)=>`
     <tr>
         <td>${u.no}</td>
-        <td>${u.price}</td>
-        <td>${u.desc}</td>
+        <td>${u.p}</td>
+        <td>${u.d}</td>
         <td>
             <button class="edit" onclick="editUnit(${i})">تعديل</button>
             <button class="del" onclick="deleteUnit(${i})">حذف</button>
         </td>
     </tr>`).join("");
 
-    // expenses table
+    // expenses
     expTable.innerHTML = expenses.map((e,i)=>`
     <tr>
         <td>${e.n}</td>
@@ -218,7 +234,8 @@ function render(){
         </td>
     </tr>`).join("");
 
-    let revenue = units.reduce((sum,u)=>sum + u.price,0);
+    // calculations
+    let revenue = units.reduce((sum,u)=>sum + u.p,0);
     let cost = expenses.reduce((sum,e)=>sum + e.p,0);
     let profit = revenue - cost;
 
@@ -228,18 +245,19 @@ function render(){
     let fee = use ? revenue * percent / 100 : 0;
     let after = profit - fee;
 
-    rev.innerText = revenue;
-    cost.innerText = cost;
-    profit.innerText = profit;
-    fee.innerText = fee;
-    after.innerText = after;
+    // display
+    document.getElementById("rev").innerText = revenue;
+    document.getElementById("costValue").innerText = cost;
+    document.getElementById("profitValue").innerText = profit;
+    document.getElementById("feeValue").innerText = fee;
+    document.getElementById("afterValue").innerText = after;
 }
 
-// EDIT / DELETE
+// edit/delete
 function editUnit(i){
     unitNo.value = units[i].no;
-    price.value = units[i].price;
-    desc.value = units[i].desc;
+    price.value = units[i].p;
+    desc.value = units[i].d;
     units.splice(i,1);
     render();
 }
