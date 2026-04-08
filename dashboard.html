@@ -25,15 +25,6 @@ body {
     margin: auto;
 }
 
-/* info */
-.info {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-/* tables */
 .report-table {
     width: 100%;
     border-collapse: collapse;
@@ -51,13 +42,11 @@ body {
     background: #d1d5db;
 }
 
-/* inputs */
-input {
+input, select {
     padding: 8px;
     margin: 5px;
 }
 
-/* buttons */
 button {
     padding: 6px 10px;
     border: none;
@@ -69,32 +58,13 @@ button {
 .del { background: #dc2626; color: white; }
 .edit { background: #64748b; color: white; }
 
-.section-title {
-    margin-top: 20px;
-}
-
-/* print display */
-.client-print {
-    font-size: 18px;
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-/* hide/show */
-@media screen {
-    .client-print { display: none; }
-}
+.screen-only { display: block; }
+.print-only { display: none; }
 
 @media print {
-    button, input {
-        display: none;
-    }
-    body {
-        background: white;
-    }
-    .client-print {
-        display: block;
-    }
+    button, input, select { display: none; }
+    .screen-only { display: none; }
+    .print-only { display: block; }
 }
 </style>
 </head>
@@ -105,30 +75,42 @@ button {
 <h2>مكتب BKTowers</h2>
 <h3>عرض إدارة أملاك</h3>
 <p id="dateNow"></p>
+
+<p class="print-only">
+<strong>عرض مقدم لـ:</strong>
+<span id="clientDisplay"></span>
+</p>
 </div>
 
 <div class="container">
 
 <!-- CLIENT -->
-<div class="info">
+<div class="screen-only">
 <h3>عرض مقدم لـ:</h3>
 <input id="clientName" placeholder="اسم المالك / الفندق" oninput="updateClient()">
-<p><strong>عرض مقدم لـ:</strong> <span id="clientDisplay" class="client-print"></span></p>
 </div>
 
 <!-- ADD UNIT -->
-<h3 class="section-title">إضافة شقة</h3>
+<h3>إضافة شقة</h3>
 <input id="unitNo" placeholder="رقم الشقة">
-<input id="price" type="number" placeholder="السعر">
 <input id="desc" placeholder="الوصف">
+
+<select id="status" onchange="togglePrice()">
+<option value="occupied">مؤجرة</option>
+<option value="empty">متاحة</option>
+</select>
+
+<input id="price" type="number" placeholder="السعر">
+
 <button class="add" onclick="addUnit()">إضافة</button>
 
 <table class="report-table">
 <thead>
 <tr>
 <th>رقم الشقة</th>
-<th>السعر</th>
 <th>الوصف</th>
+<th>الحالة</th>
+<th>السعر</th>
 <th>تحكم</th>
 </tr>
 </thead>
@@ -136,7 +118,7 @@ button {
 </table>
 
 <!-- EXPENSES -->
-<h3 class="section-title">المصروفات</h3>
+<h3>المصروفات</h3>
 <input id="expName" placeholder="النوع">
 <input id="expPrice" type="number" placeholder="المبلغ">
 <button class="add" onclick="addExp()">إضافة</button>
@@ -153,33 +135,27 @@ button {
 </table>
 
 <!-- RESULTS -->
-<h3 class="section-title">النتائج</h3>
+<h3>النتائج</h3>
 
 <table class="report-table">
-<thead>
-<tr>
-<th>البند</th>
-<th>القيمة</th>
-</tr>
-</thead>
 <tbody>
-<tr><td>الإيراد</td><td id="rev">0</td></tr>
-<tr><td>المصروفات</td><td id="costValue">0</td></tr>
-<tr><td>الربح قبل العمولة</td><td id="profitValue">0</td></tr>
+<tr><td>الإيراد الشهري</td><td id="rev">0</td></tr>
+<tr><td>الإيراد السنوي</td><td id="yearly">0</td></tr>
+<tr><td>المصروفات</td><td id="cost">0</td></tr>
+<tr><td>الربح قبل العمولة</td><td id="profit">0</td></tr>
+<tr><td>نسبة الإشغال</td><td id="occupancy">0%</td></tr>
 
 <tr id="feeRow" style="display:none;">
-<td>العمولة</td><td id="feeValue">0</td>
+<td>العمولة</td><td id="fee">0</td>
 </tr>
 
 <tr id="afterRow" style="display:none;">
-<td>الربح بعد العمولة</td><td id="afterValue">0</td>
+<td>الربح بعد العمولة</td><td id="after">0</td>
 </tr>
-
 </tbody>
 </table>
 
-<!-- COMMISSION -->
-<input id="comm" type="number" placeholder="نسبة العمولة %" oninput="render()">
+<input id="comm" type="number" placeholder="العمولة %" oninput="render()">
 <label><input type="checkbox" id="use" onchange="render()"> تفعيل العمولة</label>
 
 <br><br>
@@ -193,32 +169,42 @@ let units = [];
 let expenses = [];
 
 // date
-document.getElementById("dateNow").innerText =
-"التاريخ: " + new Date().toLocaleDateString('ar-EG');
+dateNow.innerText = "التاريخ: " + new Date().toLocaleDateString('ar-EG');
 
 // client
 function updateClient(){
-    document.getElementById("clientDisplay").innerText =
-    document.getElementById("clientName").value;
+    clientDisplay.innerText = clientName.value;
 }
 
-// ADD
+// toggle price
+function togglePrice(){
+    if(status.value === "empty"){
+        price.disabled = true;
+        price.value = "";
+    } else {
+        price.disabled = false;
+    }
+}
+
+// add unit
 function addUnit(){
     let no = unitNo.value;
-    let p = Number(price.value);
     let d = desc.value;
+    let s = status.value;
+    let p = Number(price.value) || 0;
 
-    if(!no || !p || !d) return;
+    if(!no || !d) return;
 
-    units.push({no,p,d});
+    units.push({no,d,s,p});
 
     unitNo.value="";
-    price.value="";
     desc.value="";
+    price.value="";
 
     render();
 }
 
+// add expense
 function addExp(){
     let n = expName.value;
     let p = Number(expPrice.value);
@@ -233,14 +219,15 @@ function addExp(){
     render();
 }
 
-// RENDER
+// render
 function render(){
 
     unitsTable.innerHTML = units.map((u,i)=>`
     <tr>
         <td>${u.no}</td>
-        <td>${u.p}</td>
         <td>${u.d}</td>
+        <td>${u.s === "occupied" ? "مؤجرة" : "متاحة"}</td>
+        <td>${u.s === "occupied" ? u.p : "-"}</td>
         <td>
             <button class="edit" onclick="editUnit(${i})">تعديل</button>
             <button class="del" onclick="deleteUnit(${i})">حذف</button>
@@ -257,17 +244,22 @@ function render(){
         </td>
     </tr>`).join("");
 
-    let revenue = units.reduce((sum,u)=>sum + u.p,0);
+    let occupiedUnits = units.filter(u => u.s === "occupied");
+    let revenue = occupiedUnits.reduce((sum,u)=>sum + u.p,0);
+    let yearly = revenue * 12;
+
     let cost = expenses.reduce((sum,e)=>sum + e.p,0);
     let profit = revenue - cost;
 
+    let occupancyRate = units.length ? (occupiedUnits.length / units.length * 100).toFixed(1) : 0;
+
     let percent = Number(comm.value) || 0;
-    let use = document.getElementById("use").checked;
+    let use = useCheckbox.checked;
 
     let fee = use ? revenue * percent / 100 : 0;
     let after = profit - fee;
 
-    // show/hide rows
+    // show/hide
     if(use && percent > 0){
         feeRow.style.display = "";
         afterRow.style.display = "";
@@ -278,18 +270,22 @@ function render(){
 
     // display
     rev.innerText = revenue;
-    costValue.innerText = cost;
-    profitValue.innerText = profit;
-    feeValue.innerText = fee;
-    afterValue.innerText = after;
+    yearly.innerText = yearly;
+    cost.innerText = cost;
+    profit.innerText = profit;
+    occupancy.innerText = occupancyRate + "%";
+    fee.innerText = fee;
+    after.innerText = after;
 }
 
 // edit/delete
 function editUnit(i){
     unitNo.value = units[i].no;
-    price.value = units[i].p;
     desc.value = units[i].d;
+    status.value = units[i].s;
+    price.value = units[i].p;
     units.splice(i,1);
+    togglePrice();
     render();
 }
 
