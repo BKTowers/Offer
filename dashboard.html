@@ -33,11 +33,6 @@ body {
     margin-bottom: 15px;
 }
 
-.info input {
-    padding: 8px;
-    width: 300px;
-}
-
 /* tables */
 .report-table {
     width: 100%;
@@ -78,13 +73,27 @@ button {
     margin-top: 20px;
 }
 
-/* print */
+/* print display */
+.client-print {
+    font-size: 18px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* hide/show */
+@media screen {
+    .client-print { display: none; }
+}
+
 @media print {
     button, input {
         display: none;
     }
     body {
         background: white;
+    }
+    .client-print {
+        display: block;
     }
 }
 </style>
@@ -95,6 +104,7 @@ button {
 <div class="header">
 <h2>مكتب BKTowers</h2>
 <h3>عرض إدارة أملاك</h3>
+<p id="dateNow"></p>
 </div>
 
 <div class="container">
@@ -102,7 +112,8 @@ button {
 <!-- CLIENT -->
 <div class="info">
 <h3>عرض مقدم لـ:</h3>
-<input id="clientName" placeholder="اسم المالك / الفندق">
+<input id="clientName" placeholder="اسم المالك / الفندق" oninput="updateClient()">
+<p><strong>عرض مقدم لـ:</strong> <span id="clientDisplay" class="client-print"></span></p>
 </div>
 
 <!-- ADD UNIT -->
@@ -155,18 +166,23 @@ button {
 <tr><td>الإيراد</td><td id="rev">0</td></tr>
 <tr><td>المصروفات</td><td id="costValue">0</td></tr>
 <tr><td>الربح قبل العمولة</td><td id="profitValue">0</td></tr>
-<tr><td>العمولة</td><td id="feeValue">0</td></tr>
-<tr><td>الربح بعد العمولة</td><td id="afterValue">0</td></tr>
+
+<tr id="feeRow" style="display:none;">
+<td>العمولة</td><td id="feeValue">0</td>
+</tr>
+
+<tr id="afterRow" style="display:none;">
+<td>الربح بعد العمولة</td><td id="afterValue">0</td>
+</tr>
+
 </tbody>
 </table>
 
 <!-- COMMISSION -->
-<div style="margin-top:10px;">
 <input id="comm" type="number" placeholder="نسبة العمولة %" oninput="render()">
 <label><input type="checkbox" id="use" onchange="render()"> تفعيل العمولة</label>
-</div>
 
-<br>
+<br><br>
 <button onclick="window.print()">🖨 طباعة</button>
 
 </div>
@@ -176,7 +192,17 @@ button {
 let units = [];
 let expenses = [];
 
-// ADD UNIT
+// date
+document.getElementById("dateNow").innerText =
+"التاريخ: " + new Date().toLocaleDateString('ar-EG');
+
+// client
+function updateClient(){
+    document.getElementById("clientDisplay").innerText =
+    document.getElementById("clientName").value;
+}
+
+// ADD
 function addUnit(){
     let no = unitNo.value;
     let p = Number(price.value);
@@ -193,7 +219,6 @@ function addUnit(){
     render();
 }
 
-// ADD EXPENSE
 function addExp(){
     let n = expName.value;
     let p = Number(expPrice.value);
@@ -211,7 +236,6 @@ function addExp(){
 // RENDER
 function render(){
 
-    // units
     unitsTable.innerHTML = units.map((u,i)=>`
     <tr>
         <td>${u.no}</td>
@@ -223,7 +247,6 @@ function render(){
         </td>
     </tr>`).join("");
 
-    // expenses
     expTable.innerHTML = expenses.map((e,i)=>`
     <tr>
         <td>${e.n}</td>
@@ -234,7 +257,6 @@ function render(){
         </td>
     </tr>`).join("");
 
-    // calculations
     let revenue = units.reduce((sum,u)=>sum + u.p,0);
     let cost = expenses.reduce((sum,e)=>sum + e.p,0);
     let profit = revenue - cost;
@@ -245,12 +267,21 @@ function render(){
     let fee = use ? revenue * percent / 100 : 0;
     let after = profit - fee;
 
+    // show/hide rows
+    if(use && percent > 0){
+        feeRow.style.display = "";
+        afterRow.style.display = "";
+    } else {
+        feeRow.style.display = "none";
+        afterRow.style.display = "none";
+    }
+
     // display
-    document.getElementById("rev").innerText = revenue;
-    document.getElementById("costValue").innerText = cost;
-    document.getElementById("profitValue").innerText = profit;
-    document.getElementById("feeValue").innerText = fee;
-    document.getElementById("afterValue").innerText = after;
+    rev.innerText = revenue;
+    costValue.innerText = cost;
+    profitValue.innerText = profit;
+    feeValue.innerText = fee;
+    afterValue.innerText = after;
 }
 
 // edit/delete
