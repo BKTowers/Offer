@@ -16,11 +16,7 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 .add{background:#2563eb;color:white;}
 .del{background:#dc2626;color:white;}
 .edit{background:#64748b;color:white;}
-.printBtn{background:#16a34a;color:white;margin-top:15px;}
-
-@media print{
-    button,input,select{display:none;}
-}
+@media print{button,input,select{display:none;}}
 </style>
 </head>
 
@@ -77,7 +73,7 @@ button {padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 
 <table class="report-table">
 <tbody>
-<tr><td>الإيراد</td><td id="rev">0</td></tr>
+<tr><td>الإيراد الشهري</td><td id="rev">0</td></tr>
 <tr><td>المصروفات</td><td id="cost">0</td></tr>
 <tr><td>الربح</td><td id="profit">0</td></tr>
 <tr><td>نسبة الإشغال</td><td id="occupancy">0%</td></tr>
@@ -167,13 +163,22 @@ function render(){
         <td>${u.desc}</td>
         <td>${u.status==="occupied"?"مؤجرة":"متاحة"}</td>
         <td>${u.status==="occupied"?u.price:"-"}</td>
-        <td><button onclick="deleteUnit(${i})">❌</button></td>
+        <td>
+            <button class="edit" onclick="editUnit(${i})">تعديل</button>
+            <button class="del" onclick="deleteUnit(${i})">حذف</button>
+        </td>
     </tr>`).join("");
 
     document.getElementById("expTable").innerHTML =
-    expenses.map(e=>`
-    <tr><td>${e.name}</td><td>${e.price}</td></tr>
-    `).join("");
+    expenses.map((e,i)=>`
+    <tr>
+        <td>${e.name}</td>
+        <td>${e.price}</td>
+        <td>
+            <button class="edit" onclick="editExp(${i})">تعديل</button>
+            <button class="del" onclick="deleteExp(${i})">حذف</button>
+        </td>
+    </tr>`).join("");
 
     const occupied = units.filter(u=>u.status==="occupied");
 
@@ -194,21 +199,44 @@ function render(){
         after = profit - fee;
         feeRow.style.display="";
         afterRow.style.display="";
-    } else {
+    }else{
         feeRow.style.display="none";
         afterRow.style.display="none";
     }
 
-    rev.innerText = revenue;
-    cost.innerText = cost;
-    profit.innerText = profit;
-    occupancy.innerText = occupancy + "%";
-    fee.innerText = fee;
-    after.innerText = after;
+    document.getElementById("rev").innerText = revenue;
+    document.getElementById("cost").innerText = cost;
+    document.getElementById("profit").innerText = profit;
+    document.getElementById("occupancy").innerText = occupancy+"%";
+    document.getElementById("fee").innerText = fee;
+    document.getElementById("after").innerText = after;
+}
+
+function editUnit(i){
+    const u = units[i];
+    document.getElementById("unitNo").value = u.no;
+    document.getElementById("desc").value = u.desc;
+    document.getElementById("statusSelect").value = u.status;
+    document.getElementById("priceInput").value = u.price;
+    units.splice(i,1);
+    render();
 }
 
 function deleteUnit(i){
     units.splice(i,1);
+    render();
+}
+
+function editExp(i){
+    const e = expenses[i];
+    document.getElementById("expName").value = e.name;
+    document.getElementById("expPrice").value = e.price;
+    expenses.splice(i,1);
+    render();
+}
+
+function deleteExp(i){
+    expenses.splice(i,1);
     render();
 }
 
