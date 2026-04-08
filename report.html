@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>Reports</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>BKTowers</h2>
+<button onclick="location.href='dashboard.html'">Dashboard</button>
+<button onclick="location.href='reports.html'">التقارير</button>
+</div>
+
+<div class="main">
+
+<h1>التقارير</h1>
+
+<div class="card" id="reportContent">
+<h2>تقرير مالي</h2>
+<div id="reportData"></div>
+</div>
+
+<button onclick="window.print()">🖨 طباعة / PDF</button>
+
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("report") || "{}");
+
+document.getElementById("reportData").innerHTML = `
+الإيراد: ${data.rev} <br>
+المصروفات: ${data.cost} <br>
+الربح: ${data.profit}
+`;
+</script>
+
+</body>
+</html>
