@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>BKTowers</title>
-
 <style>
 body {
     font-family: Arial;
@@ -15,14 +14,8 @@ body {
     align-items: center;
     height: 100vh;
 }
-
-.box {
-    text-align: center;
-}
-
-h1 { font-size: 40px; margin-bottom: 10px; }
-h2 { margin-bottom: 30px; }
-
+.box { text-align: center; }
+h1 { font-size: 40px; }
 button {
     padding: 15px 40px;
     font-size: 18px;
@@ -34,21 +27,11 @@ button {
 }
 </style>
 </head>
-
 <body>
-
 <div class="box">
 <h1>عرض إدارة أملاك</h1>
 <h2>مكتب BKTowers</h2>
-
-<button onclick="go()">دخول</button>
+<button onclick="location.href='dashboard.html'">دخول</button>
 </div>
-
-<script>
-function go(){
-    window.location.href = "dashboard.html";
-}
-</script>
-
 </body>
 </html>
