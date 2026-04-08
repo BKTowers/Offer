@@ -20,69 +20,73 @@ body {
 }
 
 .container {
-    display: flex;
-    gap: 15px;
     padding: 20px;
-    justify-content: center;
+    max-width: 1100px;
+    margin: auto;
 }
 
-.box {
-    background: white;
-    border-radius: 10px;
-    padding: 15px;
-    width: 280px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-}
-
-h3 {
-    margin-bottom: 10px;
-}
-
-input, select {
+/* ===== TABLE STYLE (زي الصورة) ===== */
+.report-table {
     width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-    border-radius: 6px;
-    border: 1px solid #ddd;
+    border-collapse: collapse;
+    margin-top: 10px;
 }
 
-button {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: none;
-    border-radius: 6px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
+.report-table th,
+.report-table td {
+    border: 2px solid #444;
+    padding: 10px;
+    text-align: center;
+    font-size: 15px;
 }
 
-.item {
-    background: #f1f5f9;
-    padding: 6px;
-    margin-top: 6px;
-    border-radius: 6px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.small-btn {
-    padding: 3px 6px;
-    margin: 0 2px;
-    font-size: 12px;
-}
-
-.green { color: #16a34a; }
-.red { color: #dc2626; }
-
-.big {
-    font-size: 18px;
+.report-table th {
+    background: #d1d5db;
     font-weight: bold;
 }
 
-.print {
-    background: #16a34a;
+.report-table td {
+    background: #f9fafb;
+}
+
+/* inputs */
+input {
+    padding: 8px;
+    margin: 5px;
+}
+
+/* buttons */
+button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add { background: #2563eb; color: white; }
+.del { background: #dc2626; color: white; }
+.edit { background: #64748b; color: white; }
+
+/* results */
+.results {
+    margin-top: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.big { font-size: 18px; font-weight: bold; }
+.green { color: #16a34a; }
+.red { color: #dc2626; }
+
+/* print */
+@media print {
+    button, input {
+        display: none;
+    }
+    body {
+        background: white;
+    }
 }
 </style>
 </head>
@@ -95,52 +99,58 @@ button {
 
 <div class="container">
 
-<!-- Units -->
-<div class="box">
-<h3>الشقق</h3>
-
-<input id="name" placeholder="اسم الشقة">
+<!-- ADD UNIT -->
+<h3>إضافة شقة</h3>
+<input id="unitNo" placeholder="رقم الشقة">
 <input id="price" type="number" placeholder="السعر">
+<input id="desc" placeholder="الوصف (غرفة وصالة)">
+<button class="add" onclick="addUnit()">إضافة</button>
 
-<select id="type">
-<option value="month">شهري</option>
-<option value="year">سنوي</option>
-<option value="day">يومي</option>
-</select>
+<!-- UNITS TABLE -->
+<table class="report-table">
+<thead>
+<tr>
+<th>رقم الشقة</th>
+<th>السعر</th>
+<th>الوصف</th>
+<th>تحكم</th>
+</tr>
+</thead>
+<tbody id="unitsTable"></tbody>
+</table>
 
-<button onclick="addUnit()">إضافة</button>
-
-<div id="unitsList"></div>
-</div>
-
-<!-- Expenses -->
-<div class="box">
+<!-- EXPENSES -->
 <h3>المصروفات</h3>
+<input id="expName" placeholder="النوع">
+<input id="expPrice" type="number" placeholder="المبلغ">
+<button class="add" onclick="addExp()">إضافة</button>
 
-<input id="expName" placeholder="اسم المصروف">
-<input id="expPrice" type="number" placeholder="القيمة">
+<table class="report-table">
+<thead>
+<tr>
+<th>النوع</th>
+<th>المبلغ</th>
+<th>تحكم</th>
+</tr>
+</thead>
+<tbody id="expTable"></tbody>
+</table>
 
-<button onclick="addExp()">إضافة</button>
-
-<div id="expList"></div>
-</div>
-
-<!-- Results -->
-<div class="box">
+<!-- RESULTS -->
+<div class="results">
 <h3>النتائج</h3>
 
 <p>الإيراد: <span id="rev" class="big green">0</span></p>
 <p>المصروفات: <span id="cost" class="big red">0</span></p>
-<p>الربح: <span id="profit" class="big green">0</span></p>
+<p>الربح قبل العمولة: <span id="profit" class="big green">0</span></p>
 
-<input id="comm" type="number" placeholder="العمولة %">
-<label><input type="checkbox" id="use"> تفعيل العمولة</label>
+<input id="comm" type="number" placeholder="العمولة %" oninput="render()">
+<label><input type="checkbox" id="use" onchange="render()"> تفعيل العمولة</label>
 
 <p>العمولة: <span id="fee" class="big red">0</span></p>
-<p>بعد العمولة: <span id="after" class="big green">0</span></p>
+<p>الربح بعد العمولة: <span id="after" class="big green">0</span></p>
 
-<button onclick="window.print()" class="print">طباعة</button>
-
+<button onclick="window.print()">🖨 طباعة</button>
 </div>
 
 </div>
@@ -150,86 +160,86 @@ button {
 let units = [];
 let expenses = [];
 
-function calcMonthly(price, type){
-    if(type === "year") return price / 12;
-    if(type === "day") return price * 30;
-    return price;
-}
-
+// ADD UNIT
 function addUnit(){
-    let name = document.getElementById("name").value;
-    let price = parseFloat(document.getElementById("price").value);
-    let type = document.getElementById("type").value;
+    let no = unitNo.value;
+    let priceVal = Number(price.value);
+    let descVal = desc.value;
 
-    if(!name || !price) return;
+    if(!no || !priceVal || !descVal) return;
 
-    units.push({name, price, type});
+    units.push({no, price: priceVal, desc: descVal});
 
-    document.getElementById("name").value = "";
-    document.getElementById("price").value = "";
+    unitNo.value="";
+    price.value="";
+    desc.value="";
 
     render();
 }
 
+// ADD EXPENSE
 function addExp(){
-    let name = document.getElementById("expName").value;
-    let price = parseFloat(document.getElementById("expPrice").value);
+    let n = expName.value;
+    let p = Number(expPrice.value);
 
-    if(!name || !price) return;
+    if(!n || !p) return;
 
-    expenses.push({name, price});
+    expenses.push({n,p});
 
-    document.getElementById("expName").value = "";
-    document.getElementById("expPrice").value = "";
+    expName.value="";
+    expPrice.value="";
 
     render();
 }
 
+// RENDER
 function render(){
 
-    // Units
-    document.getElementById("unitsList").innerHTML =
-    units.map((u,i)=>`
-    <div class="item">
-        ${u.name} - ${u.price}
-        <div>
-            <button class="small-btn" onclick="editUnit(${i})">✏</button>
-            <button class="small-btn" onclick="deleteUnit(${i})">❌</button>
-        </div>
-    </div>`).join("");
+    // units table
+    unitsTable.innerHTML = units.map((u,i)=>`
+    <tr>
+        <td>${u.no}</td>
+        <td>${u.price}</td>
+        <td>${u.desc}</td>
+        <td>
+            <button class="edit" onclick="editUnit(${i})">تعديل</button>
+            <button class="del" onclick="deleteUnit(${i})">حذف</button>
+        </td>
+    </tr>`).join("");
 
-    // Expenses
-    document.getElementById("expList").innerHTML =
-    expenses.map((e,i)=>`
-    <div class="item">
-        ${e.name} - ${e.price}
-        <div>
-            <button class="small-btn" onclick="editExp(${i})">✏</button>
-            <button class="small-btn" onclick="deleteExp(${i})">❌</button>
-        </div>
-    </div>`).join("");
+    // expenses table
+    expTable.innerHTML = expenses.map((e,i)=>`
+    <tr>
+        <td>${e.n}</td>
+        <td>${e.p}</td>
+        <td>
+            <button class="edit" onclick="editExp(${i})">تعديل</button>
+            <button class="del" onclick="deleteExp(${i})">حذف</button>
+        </td>
+    </tr>`).join("");
 
-    let revenue = units.reduce((sum,u)=>sum + calcMonthly(u.price,u.type),0);
-    let cost = expenses.reduce((sum,e)=>sum + e.price,0);
+    let revenue = units.reduce((sum,u)=>sum + u.price,0);
+    let cost = expenses.reduce((sum,e)=>sum + e.p,0);
     let profit = revenue - cost;
 
-    let percent = parseFloat(document.getElementById("comm").value) || 0;
+    let percent = Number(comm.value) || 0;
     let use = document.getElementById("use").checked;
 
     let fee = use ? revenue * percent / 100 : 0;
     let after = profit - fee;
 
-    document.getElementById("rev").innerText = revenue;
-    document.getElementById("cost").innerText = cost;
-    document.getElementById("profit").innerText = profit;
-    document.getElementById("fee").innerText = fee;
-    document.getElementById("after").innerText = after;
+    rev.innerText = revenue;
+    cost.innerText = cost;
+    profit.innerText = profit;
+    fee.innerText = fee;
+    after.innerText = after;
 }
 
+// EDIT / DELETE
 function editUnit(i){
-    document.getElementById("name").value = units[i].name;
-    document.getElementById("price").value = units[i].price;
-    document.getElementById("type").value = units[i].type;
+    unitNo.value = units[i].no;
+    price.value = units[i].price;
+    desc.value = units[i].desc;
     units.splice(i,1);
     render();
 }
@@ -240,8 +250,8 @@ function deleteUnit(i){
 }
 
 function editExp(i){
-    document.getElementById("expName").value = expenses[i].name;
-    document.getElementById("expPrice").value = expenses[i].price;
+    expName.value = expenses[i].n;
+    expPrice.value = expenses[i].p;
     expenses.splice(i,1);
     render();
 }
